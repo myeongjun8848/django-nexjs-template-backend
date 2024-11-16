@@ -1,0 +1,6 @@
+Django==4.2
+python-dotenv
+django-ninja
+django-ninja-jwt[crypto]
+django-allauth
+django-cors-headers
