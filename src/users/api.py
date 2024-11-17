@@ -1,5 +1,4 @@
 import random
-from typing import Dict, Any
 from smtplib import SMTPException
 
 from django.conf import settings
@@ -14,13 +13,14 @@ from django.template.loader import render_to_string
 from ninja.errors import ValidationError, Http404
 from ninja import Router
 
+from errors.schemas import ErrorOut
 from .schemas import RegisterIn, UserOut, VerifyEmailIn
 
 
 router = Router()
 
 # register
-@router.post('/register', response={200: UserOut, 400: Dict[str, Any], 422: Dict[str, Any]})
+@router.post('/register', response={200: UserOut, 400: ErrorOut, 422: ErrorOut})
 def register(request, payload: RegisterIn):
 
     # 이미 존재하는 이메일인지 검증
@@ -62,10 +62,13 @@ def register(request, payload: RegisterIn):
             raise Exception(_("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요."))
     
         
-@router.post('/verify-email', response={200: Dict[str, Any], 400: Dict[str, Any], 404: Dict[str, Any]})
+@router.post('/verify-email', response={200: dict, 400: ErrorOut, 404: ErrorOut})
 def verify_email(request, payload: VerifyEmailIn):
-    obj = get_user_model().objects.get_or_404(email=payload.email)
-    
+    try:
+        obj = get_user_model().objects.get(email=payload.email)
+    except get_user_model().DoesNotExist:
+        raise Http404("User not found")
+
     if obj.verification_code != payload.verification_code:
         raise ValidationError(_("인증 코드가 일치하지 않습니다."))
     
