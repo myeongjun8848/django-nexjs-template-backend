@@ -6,10 +6,10 @@ from .schemas import PostIn, PostOut
 
 router = Router()
 
+
 # get list
 @router.get('/', response=list[PostOut], auth=JWTAuth())
 def list_posts(request):
-    print("is_authenticated @@@@@@@@@@@@", request.user.is_authenticated)
     qs = Post.objects.all()
     return qs
 
