@@ -13,14 +13,15 @@ from django.template.loader import render_to_string
 from ninja.errors import ValidationError, Http404
 from ninja import Router
 
-from errors.schemas import ErrorOut
+from helpers.create_response import create_success_response
+from schemas.response import SuccessResponse, ErrorResponse
 from .schemas import RegisterIn, UserOut, VerifyEmailIn
 
 
-router = Router()
+router = Router(tags=["users"])
 
 # register
-@router.post('/register', response={200: UserOut, 400: ErrorOut, 422: ErrorOut})
+@router.post('/register', response={200: SuccessResponse[UserOut], 400: ErrorResponse, 422: ErrorResponse})
 def register(request, payload: RegisterIn):
 
     # 이미 존재하는 이메일인지 검증
@@ -57,12 +58,12 @@ def register(request, payload: RegisterIn):
                 html_message=email_content,
             )
 
-            return obj
+            return create_success_response(obj)
         except (SMTPException, Exception) as e:
             raise Exception(_("알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해주세요."))
     
         
-@router.post('/verify-email', response={200: dict, 400: ErrorOut, 404: ErrorOut})
+@router.post('/verify-email', response={200: SuccessResponse[dict], 400: ErrorResponse, 404: ErrorResponse})
 def verify_email(request, payload: VerifyEmailIn):
     try:
         obj = get_user_model().objects.get(email=payload.email)
@@ -74,4 +75,4 @@ def verify_email(request, payload: VerifyEmailIn):
     
     obj.email_verified = True
     obj.save()
-    return {"detail": _("이메일 인증이 완료되었습니다.")}
+    return create_success_response(_("이메일 인증이 완료되었습니다."))
